@@ -1,0 +1,124 @@
+\documentclass[11pt]{article}
+
+\usepackage{minted}
+\usepackage{hyperref}
+\usepackage{datetime}
+\usepackage{datenumber}
+\usepackage{advdate}
+\usepackage[super]{nth}
+\usepackage[margin=0.75in]{geometry}
+
+\parindent 0pt \parskip 6pt
+
+\newcommand\todo[1]{\textbf{TODO(kc506): #1}}
+\newcommand\haskell[1]{\mintinline{haskell}{#1}}
+\newcommand\monospace[1]{\mintinline{text}{#1}}
+
+\begin{document}
+
+\thispagestyle{empty}
+
+\centerline{\large An Optimising Compiler from Haskell to Java Bytecode}
+\centerline{\large Progress Report}
+\vspace{0.2in}
+
+\centerline{Keith Collister, kc506}
+\centerline{Robinson College}
+\centerline{Foobar date}
+
+\vspace{0.2in}
+
+\ThisYear{2019}\ThisMonth{1}\ThisDay{21}
+\input{daterange.tex}
+
+\begin{tabular}[t]{@{}l}
+{\bf Project Supervisor:} Dr. Timothy Jones \\[3mm]
+{\bf Director of Studies:} Prof. Alan Mycroft
+\end{tabular}
+\hfill
+\begin{tabular}[t]{@{}l @{}l}
+{\bf Overseers: } & Prof. Simone Teufel \\[3mm]
+& Dr. Andrew Rice
+\end{tabular}
+
+\vspace{0.3in}
+
+\large{\bf Success Criteria}
+
+My project currently does not meet the minimum success criteria established in the proposal: the compiler produces Java
+bytecode from Haskell source code, but there are bugs that prevent the output from being executed. In addition, no
+optimisations have yet been implemented.
+
+The main cause of the delay is unexpected dependencies between different source language features. To define simple
+operations like addition, it is necessary to implement functions, datatypes, and typeclasses: this forced me to
+implement these features sooner than planned. Currently functions, datatypes, and typeclass definitions have been
+implemented (with known bugs), and typeclass instance definitions are the remaining critical feature. After implementing
+these, some planned features (eg. lists) are delivered `for free' (simply defined as \haskell{data [] a = [] | a:[a]}).
+
+Another cause for delay was a period of unexpectedly high workload at the end of Michaelmas term, which stalled
+development for two weeks.
+
+\large{\bf Current Progress}
+
+The compiler contains 4 coarse stages:
+
+\begin{enumerate}
+\item
+{
+    Frontend: The Haskell source is parsed using an external library. Variables in the Haskell source are renamed to
+    eliminate shadowing, reducing complexity in subsequent stages. Dependency analysis is performed on the source
+    declarations: recursive relations are inferred and the order of compilation of declarations is decided.
+}
+\item
+{
+    Typechecking: Type signatures are inferred from the source declarations using the results of the dependency
+    analysis. The Haskell AST is explicitly annotated with type information, and any user-provided type signatures are
+    checked against the inferred signatures.
+}
+\item
+{
+    Middle-end: Overloaded functions (eg. \haskell{(+) :: Num a => a -> a -> a}) are deoverloaded into
+    `dictionary-passing' equivalents (\haskell{(+) :: Num a -> a -> a -> a}). Typeclasses are replaced with datatype
+    and function declarations.
+
+    The Haskell AST is lowered through two intermediate languages and into Administrative Normal Form. The first IL
+    provides a simple language that optimisation passes can easily process, and the second IL makes (lazy) evaluation
+    and allocation explicit for easier code generation.
+}
+\item
+{
+    Code Generation: The final IL is transformed into Java Bytecode. An external library is used to convert a logical
+    description of the bytecode to actual binary data, but I have extended the library to support various JVM features 
+    required by the lowering (notably the \monospace{invokedynamic} and \monospace{lookupswitch} instructions).
+}
+\end{enumerate}
+
+\large{\bf New Schedule}
+
+Given that the project's schedule was effectively rearranged by implementing features sooner than expected, I've
+included a new workplan below:
+
+\begin{itemize}
+\item
+{
+    \daterange{14}
+
+    Debug currently failing bytecode, and implement typeclass instances (allows for specifying datatypes to be instances
+    of certain typeclasses). Ensure non-strict semantics are working as expected.
+
+    After this work package, the compiler will be able to transform a reasonably-sized subset of Haskell to executable
+    Java Bytecode.
+}
+\item
+{
+    \daterange{21}
+
+    Implement optimisations: currently, I intend to implement a peephole pass, dead store elimination, lambda+let
+    lifting, and strictness analysis.
+}
+\end{itemize}
+
+After the end of these two work packages, I should be on track with the original proposed schedule, and intend to spend
+the remaining time fixing bugs and starting on my dissertation write-up.
+
+\end{document}
