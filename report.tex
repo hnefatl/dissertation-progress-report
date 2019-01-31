@@ -5,6 +5,7 @@
 \usepackage{datetime}
 \usepackage{datenumber}
 \usepackage{advdate}
+\usepackage{amsmath}
 \usepackage[super]{nth}
 \usepackage[margin=0.75in]{geometry}
 
@@ -24,39 +25,43 @@
 
 \centerline{Keith Collister, kc506}
 \centerline{Robinson College}
-\centerline{Foobar date}
+\centerline{\today}
 
 \vspace{0.2in}
 
-\ThisYear{2019}\ThisMonth{1}\ThisDay{21}
+\ThisYear{2019}\ThisMonth{2}\ThisDay{4}
 \input{daterange.tex}
 
 \begin{tabular}[t]{@{}l}
-{\bf Project Supervisor:} Dr. Timothy Jones \\[3mm]
-{\bf Director of Studies:} Prof. Alan Mycroft
+{\bf Project Supervisor:} Dr.\ Timothy Jones\\[3mm]
+{\bf Director of Studies:} Prof.\ Alan Mycroft
 \end{tabular}
 \hfill
 \begin{tabular}[t]{@{}l @{}l}
-{\bf Overseers: } & Prof. Simone Teufel \\[3mm]
-& Dr. Andrew Rice
+{\bf Overseers: } & Prof.\ Simone Teufel \\[3mm]
+& Dr.\ Andrew Rice
 \end{tabular}
 
 \vspace{0.3in}
 
 \large{\bf Success Criteria}
 
-My project currently does not meet the minimum success criteria established in the proposal: the compiler produces Java
-bytecode from Haskell source code, but there are bugs that prevent the output from being executed. In addition, no
-optimisations have yet been implemented.
+The success criteria established in the project proposal were to support translating a basic subset of Haskell to lazily
+evaluating Java bytecode, performing simple optimisations.
 
-The main cause of the delay is unexpected dependencies between different source language features. To define simple
+My project currently does not quite meet those criteria: the compiler translates Java bytecode from a medium-sized
+subset of Haskell source code into executable bytecode, but it currently evaluates `more strictly' than intended, and
+one core language feature (typeclass instances) currently has critical bugs when compiled to bytecode. No optimisations
+have been implemented so far.
+
+The main cause of the delay was unexpected dependencies between different source language features. To define simple
 operations like addition, it is necessary to implement functions, datatypes, and typeclasses: this forced me to
-implement these features sooner than planned. Currently functions, datatypes, and typeclass definitions have been
-implemented (with known bugs), and typeclass instance definitions are the remaining critical feature. After implementing
-these, some planned features (eg. lists) are delivered `for free' (simply defined as \haskell{data [] a = [] | a:[a]}).
+implement some of these features sooner than planned (during Michaelmas rather than at the start of Lent term). By
+implementing these to support simple operations, some planned features were delivered `for free' earlier than planned
+(eg. lists, simply defined as \haskell{data [] a = [] | a:[a]} after implementing support for datatypes).
 
-Another cause for delay was a period of unexpectedly high workload at the end of Michaelmas term, which stalled
-development for two weeks.
+Another cause for delay was a period of unexpectedly high workload due to the Cloud Computing Unit of Assessment at the
+end of Michaelmas term, which halted development for two weeks.
 
 \large{\bf Current Progress}
 
@@ -65,30 +70,33 @@ The compiler contains 4 coarse stages:
 \begin{enumerate}
 \item
 {
-    Frontend: The Haskell source is parsed using an external library. Variables in the Haskell source are renamed to
+    Frontend: The Haskell source is parsed using an external library, which I have slightly modified to allow parsing
+    built-in data constructors such as \haskell{(,)} and \haskell{[]}. Variables in the Haskell source are renamed to
     eliminate shadowing, reducing complexity in subsequent stages. Dependency analysis is performed on the source
     declarations: recursive relations are inferred and the order of compilation of declarations is decided.
 }
 \item
 {
-    Typechecking: Type signatures are inferred from the source declarations using the results of the dependency
-    analysis. The Haskell AST is explicitly annotated with type information, and any user-provided type signatures are
-    checked against the inferred signatures.
+    Type Inference: Polymorphic overloaded type signatures (eg. \(\forall \alpha.\;\text{Num}\;\alpha \Rightarrow \alpha
+    \rightarrow \alpha \rightarrow \alpha\)) are inferred from the source declarations using the results of the
+    dependency analysis. The Haskell AST is explicitly annotated with type information, and any user-provided type
+    signatures are checked against the inferred signatures.
 }
 \item
 {
     Middle-end: Overloaded functions (eg. \haskell{(+) :: Num a => a -> a -> a}) are deoverloaded into
-    `dictionary-passing' equivalents (\haskell{(+) :: Num a -> a -> a -> a}). Typeclasses are replaced with datatype
-    and function declarations.
+    `dictionary-passing' equivalents (\haskell{(+) :: Num a -> a -> a -> a}). Typeclasses are replaced with datatype and
+    function declarations, and typeclass instances are replaced with variable declarations. These are all implemented as
+    Haskell source-to-source transformations.
 
-    The Haskell AST is lowered through two intermediate languages and into Administrative Normal Form. The first IL
-    provides a simple language that optimisation passes can easily process, and the second IL makes (lazy) evaluation
-    and allocation explicit for easier code generation.
+    The Haskell AST is lowered through two intermediate languages (ILs) and into Administrative Normal Form. The first
+    IL provides a simple language that optimisation passes can easily process, and the second IL makes allocation and
+    (lazy) evaluation explicit for easier code generation.
 }
 \item
 {
     Code Generation: The final IL is transformed into Java Bytecode. An external library is used to convert a logical
-    description of the bytecode to actual binary data, but I have extended the library to support various JVM features 
+    description of the bytecode to actual binary data, and I have extended the library to support various JVM features 
     required by the lowering (notably the \monospace{invokedynamic} and \monospace{lookupswitch} instructions).
 }
 \end{enumerate}
@@ -101,10 +109,10 @@ included a new workplan below:
 \begin{itemize}
 \item
 {
-    \daterange{14}
+    \daterange{7}
 
-    Debug currently failing bytecode, and implement typeclass instances (allows for specifying datatypes to be instances
-    of certain typeclasses). Ensure non-strict semantics are working as expected.
+    Debug currently failing bytecode for typeclass instances. Rewrite the translation of pattern matching to provide
+    non-strict semantics.
 
     After this work package, the compiler will be able to transform a reasonably-sized subset of Haskell to executable
     Java Bytecode.
@@ -113,12 +121,12 @@ included a new workplan below:
 {
     \daterange{21}
 
-    Implement optimisations: currently, I intend to implement a peephole pass, dead store elimination, lambda+let
-    lifting, and strictness analysis.
+    Implement optimisations: currently, I intend to implement a peephole pass, unreachable code/procedure elimination,
+    dead store elimination, lambda+let lifting, and if there is sufficient time, strictness analysis.
 }
 \end{itemize}
 
-After the end of these two work packages, I should be on track with the original proposed schedule, and intend to spend
-the remaining time fixing bugs and starting on my dissertation write-up.
+After the end of these two work packages, I should be only a week behind the original proposed schedule, and intend to
+spend any remaining time fixing bugs and starting on my dissertation write-up.
 
 \end{document}
